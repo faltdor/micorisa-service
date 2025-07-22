@@ -6,23 +6,36 @@ const { v4: uuidv4 } = require('uuid');
 
 // POST /readings
 router.post('/', async (req, res) => {
-    const { deviceName, sensorName, value } = req.body;
+    const readings = req.body;
 
-    if (!deviceName || !sensorName || typeof value !== 'number') {
-        return res.status(400).json({ error: 'Invalid input data' });
+    if (!Array.isArray(readings)) {
+        return res.status(400).json({ error: 'Expected an array of readings' });
     }
 
-    const id = uuidv4();
+    const saved = [];
 
     try {
-        const result = await pool.query(
-            `INSERT INTO sensor_reading (id, device_name, sensor_name, value)
-             VALUES ($1, $2, $3, $4) RETURNING *`,
-            [id, deviceName, sensorName, value]
-        );
-        res.status(201).json(result.rows[0]);
+        for (const reading of readings) {
+            const { deviceName, sensorName, value } = reading;
+
+            if (!deviceName || !sensorName || typeof value !== 'number') {
+                return res.status(400).json({ error: 'Invalid input data in one of the readings' });
+            }
+
+            const id = uuidv4();
+
+            const result = await pool.query(
+                `INSERT INTO sensor_reading (id, device_name, sensor_name, value)
+                 VALUES ($1, $2, $3, $4) RETURNING *`,
+                [id, deviceName, sensorName, value]
+            );
+
+            saved.push(result.rows[0]);
+        }
+
+        res.status(201).json(saved);
     } catch (error) {
-        console.error('Error inserting reading:', error);
+        console.error('Error inserting readings:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
