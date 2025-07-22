@@ -11,6 +11,12 @@ app.use(express.json());
 const readingsRouter = require('./routes/readings');
 app.use('/api/readings', readingsRouter);
 
+app.use((req, res, next) => {
+    console.log('Content-Type:', req.headers['content-type']);
+    console.log('Body:', req.body);
+    next();
+});
+
 app.get('/', (req, res) => {
     res.send('Micorisa Node.js backend running');
 });
