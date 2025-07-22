@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: micorisa-service
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: 8080
