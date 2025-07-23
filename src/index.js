@@ -18,7 +18,7 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-    res.send('Micorisa Node.js backend running');
+    res.send('micoriza Node.js backend running');
 });
 
 app.listen(port, () => {

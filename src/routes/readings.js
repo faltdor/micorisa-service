@@ -32,7 +32,7 @@ router.post('/', async (req, res) => {
 
             saved.push(result.rows[0]);
         }
-
+        console.log('Record saved:', saved);
         res.status(201).json(saved);
     } catch (error) {
         console.error('Error inserting readings:', error);
