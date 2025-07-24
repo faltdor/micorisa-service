@@ -119,4 +119,30 @@ router.get("/", async (req, res) => {
     }
 });
 
+// Obtener lista única de device_name
+router.get("/devices", async (req, res) => {
+    try {
+        const result = await pool.query(`
+      SELECT DISTINCT device_name FROM sensor_reading ORDER BY device_name ASC
+    `);
+        res.json(result.rows.map(row => row.device_name));
+    } catch (err) {
+        console.error("Error al obtener devices:", err);
+        res.status(500).json({ error: "Error al obtener devices" });
+    }
+});
+
+// Obtener lista única de sensor_name
+router.get("/sensors", async (req, res) => {
+    try {
+        const result = await pool.query(`
+      SELECT DISTINCT sensor_name FROM sensor_reading ORDER BY sensor_name ASC
+    `);
+        res.json(result.rows.map(row => row.sensor_name));
+    } catch (err) {
+        console.error("Error al obtener sensores:", err);
+        res.status(500).json({ error: "Error al obtener sensores" });
+    }
+});
+
 module.exports = router;
