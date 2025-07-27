@@ -16,18 +16,21 @@ router.post('/', async (req, res) => {
 
     try {
         for (const reading of readings) {
-            const { deviceName, sensorName, value } = reading;
+            const { deviceName, sensorName, value, readAt } = reading;
 
             if (!deviceName || !sensorName || typeof value !== 'number') {
                 return res.status(400).json({ error: 'Invalid input data in one of the readings' });
             }
 
             const id = uuidv4();
+            const createdAt = new Date();
+            const finalReadAt = readAt ? new Date(readAt) : createdAt;
 
             const result = await pool.query(
-                `INSERT INTO sensor_reading (id, device_name, sensor_name, value)
-                 VALUES ($1, $2, $3, $4) RETURNING *`,
-                [id, deviceName, sensorName, value]
+                `INSERT INTO sensor_reading (id, device_name, sensor_name, value, read_at, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6)
+                     RETURNING *`,
+                [id, deviceName, sensorName, value, finalReadAt, createdAt]
             );
 
             saved.push(result.rows[0]);
