@@ -66,11 +66,15 @@ router.get("/", async (req, res) => {
             conditions.push(`created_at >= NOW() - INTERVAL '24 hours'`);
         } else {
             if (from) {
-                params.push(from);
+                const fromWithTime = from.length === 10 ? `${from}T01:00:00` : from;
+                console.log(fromWithTime);
+
+                params.push(fromWithTime);
                 conditions.push(`created_at >= $${params.length}`);
             }
             if (to) {
-                params.push(to);
+                const toWithTime = from.length === 10 ? `${from}T23:59:00` : from;
+                params.push(toWithTime);
                 conditions.push(`created_at <= $${params.length}`);
             }
         }
