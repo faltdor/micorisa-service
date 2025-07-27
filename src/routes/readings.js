@@ -73,7 +73,7 @@ router.get("/", async (req, res) => {
                 conditions.push(`created_at >= $${params.length}`);
             }
             if (to) {
-                const toWithTime = from.length === 10 ? `${from}T23:59:00` : from;
+                const toWithTime = to.length === 10 ? `${to}T23:59:00` : to;
                 params.push(toWithTime);
                 conditions.push(`created_at <= $${params.length}`);
             }
