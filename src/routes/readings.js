@@ -47,74 +47,74 @@ router.get("/", async (req, res) => {
     const { deviceName, sensorName, from, to, groupBy } = req.query;
 
     try {
-        let query = `
+        const conditions = [];
+        const params = [];
+
+        // Filtros opcionales
+        if (deviceName) {
+            params.push(deviceName);
+            conditions.push(`device_name = $${params.length}`);
+        }
+
+        if (sensorName) {
+            params.push(sensorName);
+            conditions.push(`sensor_name = $${params.length}`);
+        }
+
+        // Si from y to están vacíos, usar últimas 24 horas
+        if (!from && !to) {
+            conditions.push(`created_at >= NOW() - INTERVAL '24 hours'`);
+        } else {
+            if (from) {
+                params.push(from);
+                conditions.push(`created_at >= $${params.length}`);
+            }
+            if (to) {
+                params.push(to);
+                conditions.push(`created_at <= $${params.length}`);
+            }
+        }
+
+        let select = `
             SELECT
                 device_name,
                 sensor_name,
                 created_at,
                 value AS avg_value
-            FROM sensor_reading
-            WHERE 1 = 1
         `;
-        const params = [];
 
-        if (deviceName) {
-            params.push(deviceName);
-            query += ` AND device_name = $${params.length}`;
-        }
-
-        if (sensorName) {
-            params.push(sensorName);
-            query += ` AND sensor_name = $${params.length}`;
-        }
-
-        if (from) {
-            params.push(from);
-            query += ` AND created_at >= $${params.length}`;
-        }
-
-        if (to) {
-            params.push(to);
-            query += ` AND created_at <= $${params.length}`;
-        }
-
+        let groupClause = "";
         if (groupBy === "hour") {
-            query = `
-                SELECT 
-                    device_name, 
+            select = `
+                SELECT
+                    device_name,
                     sensor_name,
                     DATE_TRUNC('hour', created_at) AS created_at,
                     AVG(value) AS avg_value
-                FROM sensor_reading
-                WHERE 1 = 1
-                    ${deviceName ? ` AND device_name = $1` : ''}
-                    ${sensorName ? ` AND sensor_name = $2` : ''}
-                    ${from ? ` AND created_at >= $3` : ''}
-                    ${to ? ` AND created_at <= $4` : ''}
-                GROUP BY device_name, sensor_name, DATE_TRUNC('hour', created_at)
-                ORDER BY created_at ASC
             `;
-        }
-
-        if (groupBy === "day") {
-            query = `
-                SELECT 
-                    device_name, 
+            groupClause = `GROUP BY device_name, sensor_name, DATE_TRUNC('hour', created_at)`;
+        } else if (groupBy === "day") {
+            select = `
+                SELECT
+                    device_name,
                     sensor_name,
                     DATE_TRUNC('day', created_at) AS created_at,
                     AVG(value) AS avg_value
-                FROM sensor_reading
-                WHERE 1 = 1
-                    ${deviceName ? ` AND device_name = $1` : ''}
-                    ${sensorName ? ` AND sensor_name = $2` : ''}
-                    ${from ? ` AND created_at >= $3` : ''}
-                    ${to ? ` AND created_at <= $4` : ''}
-                GROUP BY device_name, sensor_name, DATE_TRUNC('day', created_at)
-                ORDER BY created_at ASC
             `;
+            groupClause = `GROUP BY device_name, sensor_name, DATE_TRUNC('day', created_at)`;
         }
 
-        const result = await pool.query(query, params);
+        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+        const finalQuery = `
+            ${select}
+            FROM sensor_reading
+            ${whereClause}
+            ${groupClause}
+            ORDER BY created_at ASC
+        `;
+
+        const result = await pool.query(finalQuery, params);
         res.json(result.rows);
     } catch (error) {
         console.error("Error al obtener lecturas:", error);
